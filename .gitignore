@@ -1,0 +1,71 @@
+# ========================================
+# ONLY EXCLUDE: Dataset (too large ~10GB)
+# ========================================
+# Dataset images and labels
+data/FOD-A/images/
+data/FOD-A/labels/
+data/FODPascalVOCFormat-V.2.1/
+
+# Everything else is tracked including:
+# - All model weights (*.pt files)
+# - All training results (runs/, fod_detection/)
+# - All plots and metrics
+# - All epoch checkpoints
+
+# Python virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# W&B cache (regenerated)
+wandb/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

@@ -1,0 +1,158 @@
+"""
+YOLOv8 Base Model Training Script
+Trains standard YOLOv8m model on FOD-A dataset as baseline
+"""
+
+import os
+from pathlib import Path
+from ultralytics import YOLO
+import torch
+from datetime import datetime
+
+# Configuration
+DATASET_CONFIG = "data/FOD-A/data.yaml"
+MODEL_SIZE = "yolov8m.pt"  # Options: yolov8n.pt, yolov8s.pt, yolov8m.pt, yolov8l.pt, yolov8x.pt
+IMG_SIZE = 1280  # Higher resolution for small objects
+BATCH_SIZE = 16  # Adjust based on GPU memory
+EPOCHS = 100
+PATIENCE = 20  # Early stopping patience
+DEVICE = 0  # GPU device (0 for single GPU, '0,1' for multi-GPU)
+
+# Hyperparameters
+HYPERPARAMS = {
+    'lr0': 0.01,
+    'lrf': 0.01,
+    'momentum': 0.937,
+    'weight_decay': 0.0005,
+    'warmup_epochs': 3.0,
+    'box': 7.5,
+    'cls': 0.5,
+    'dfl': 1.5,
+    'hsv_h': 0.015,
+    'hsv_s': 0.7,
+    'hsv_v': 0.4,
+    'degrees': 0.0,
+    'translate': 0.1,
+    'scale': 0.9,
+    'flipud': 0.0,
+    'fliplr': 0.5,
+    'mosaic': 1.0,
+    'mixup': 0.15,
+    'copy_paste': 0.3,
+    'close_mosaic': 10,
+}
+
+# Output paths
+PROJECT_NAME = "fod_detection"
+RUN_NAME = f"yolov8m_baseline_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+OUTPUT_DIR = Path("runs/train") / RUN_NAME
+
+
+def check_gpu():
+    """Check GPU availability and CUDA version"""
+    if torch.cuda.is_available():
+        print(f"✓ GPU Available: {torch.cuda.get_device_name(0)}")
+        print(f"✓ CUDA Version: {torch.version.cuda}")
+        print(f"✓ GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.2f} GB")
+    else:
+        print("⚠️ No GPU detected! Training will be slow.")
+        return False
+    return True
+
+
+def train_yolov8_base():
+    """Train YOLOv8 base model"""
+    
+    print("="*70)
+    print("YOLOv8 BASELINE TRAINING")
+    print("="*70)
+    
+    # Check GPU
+    if not check_gpu():
+        response = input("Continue with CPU? (y/n): ")
+        if response.lower() != 'y':
+            return
+    
+    # Verify dataset
+    dataset_path = Path(DATASET_CONFIG)
+    if not dataset_path.exists():
+        raise FileNotFoundError(f"Dataset config not found: {DATASET_CONFIG}")
+    
+    print(f"\n📊 Dataset: {DATASET_CONFIG}")
+    print(f"🏗️  Model: {MODEL_SIZE}")
+    print(f"📐 Image Size: {IMG_SIZE}×{IMG_SIZE}")
+    print(f"📦 Batch Size: {BATCH_SIZE}")
+    print(f"🔄 Epochs: {EPOCHS}")
+    print(f"💾 Output: {OUTPUT_DIR}")
+    
+    # Load pretrained model
+    print(f"\n⏳ Loading pretrained {MODEL_SIZE}...")
+    model = YOLO(MODEL_SIZE)
+    
+    # Start training
+    print("\n🚀 Starting training...\n")
+    results = model.train(
+        data=DATASET_CONFIG,
+        epochs=EPOCHS,
+        imgsz=IMG_SIZE,
+        batch=BATCH_SIZE,
+        device=DEVICE,
+        patience=PATIENCE,
+        save=True,
+        save_period=10,  # Save checkpoint every 10 epochs
+        project=PROJECT_NAME,
+        name=RUN_NAME,
+        exist_ok=True,
+        pretrained=True,
+        optimizer='SGD',
+        verbose=True,
+        seed=42,
+        deterministic=True,
+        single_cls=False,
+        rect=False,  # Rectangular training
+        cos_lr=True,  # Cosine LR scheduler
+        label_smoothing=0.0,
+        val=True,
+        plots=True,
+        **HYPERPARAMS
+    )
+    
+    print("\n" + "="*70)
+    print("✅ TRAINING COMPLETE!")
+    print("="*70)
+    
+    # Print results summary
+    print(f"\n📈 Final Metrics:")
+    print(f"   mAP50: {results.results_dict.get('metrics/mAP50(B)', 'N/A'):.4f}")
+    print(f"   mAP50-95: {results.results_dict.get('metrics/mAP50-95(B)', 'N/A'):.4f}")
+    
+    # Save paths
+    best_model = Path(PROJECT_NAME) / RUN_NAME / "weights" / "best.pt"
+    last_model = Path(PROJECT_NAME) / RUN_NAME / "weights" / "last.pt"
+    
+    print(f"\n💾 Model Weights Saved:")
+    print(f"   Best: {best_model}")
+    print(f"   Last: {last_model}")
+    
+    # Validation
+    print("\n🔍 Running final validation...")
+    val_results = model.val()
+    
+    print(f"\n📊 Validation Results:")
+    print(f"   Precision: {val_results.results_dict.get('metrics/precision(B)', 'N/A'):.4f}")
+    print(f"   Recall: {val_results.results_dict.get('metrics/recall(B)', 'N/A'):.4f}")
+    print(f"   mAP50: {val_results.results_dict.get('metrics/mAP50(B)', 'N/A'):.4f}")
+    print(f"   mAP50-95: {val_results.results_dict.get('metrics/mAP50-95(B)', 'N/A'):.4f}")
+    
+    return model, results
+
+
+if __name__ == "__main__":
+    try:
+        model, results = train_yolov8_base()
+        print("\n✅ Script completed successfully!")
+    except KeyboardInterrupt:
+        print("\n⚠️ Training interrupted by user")
+    except Exception as e:
+        print(f"\n❌ Error during training: {e}")
+        raise
