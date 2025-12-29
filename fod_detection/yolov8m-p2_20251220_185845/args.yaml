@@ -1,6 +1,6 @@
 task: detect
 mode: train
-model: configs\yolov8-p2_temp.yaml
+model: fod_detection\yolov8m-p2_20251220_185845\weights\last.pt
 data: data/FOD-A/data.yaml
 epochs: 100
 time: null
@@ -24,7 +24,7 @@ single_cls: false
 rect: false
 cos_lr: true
 close_mosaic: 10
-resume: false
+resume: fod_detection\yolov8m-p2_20251220_185845\weights\last.pt
 amp: true
 fraction: 1.0
 profile: false
