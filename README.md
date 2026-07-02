@@ -16,6 +16,11 @@ Code/
 │       ├── labels/        # YOLO format annotations (.txt)
 │       └── metadata.csv   # Environmental conditions (Bright/Dim/Dark, Dry/Wet)
 ├── notebooks/             # Jupyter notebooks for exploration and analysis
+├── scripts/
+│   ├── analysis/          # Manual-run figure/stat generation scripts
+│   ├── training/          # Training and resume scripts
+│   ├── testing/           # Batch-size and memory test scripts
+│   └── maintenance/       # Sync and environment helper scripts
 ├── configs/               # YAML configurations for model architectures
 ├── utils/                 # Helper scripts (data loaders, visualization, metrics)
 ├── models/                # Trained model checkpoints
@@ -74,6 +79,11 @@ Run the dataset exploration notebook:
 jupyter notebook notebooks/01_dataset_exploration.ipynb
 ```
 
+Generate corrected object-scale statistics and figures:
+```bash
+python scripts/analysis/generate_dataset_scale_stats.py
+```
+
 ---
 
 ## Dataset Information
@@ -81,7 +91,7 @@ jupyter notebook notebooks/01_dataset_exploration.ipynb
 ### FOD-A Dataset Overview
 - **Classes**: 31 object categories (Bolt, Nut, Screw, Washer, Wire, etc.)
 - **Instances**: 30,000+ bounding box annotations
-- **Challenge**: 85%+ of objects occupy <20% of image area (small object detection)
+- **Scale note**: 85%+ of objects occupy <20% of image area, but this is a relative-area statistic. Report COCO small/medium/large bins separately from relative-area bins.
 - **Environmental Conditions**:
   - **Light**: Bright, Dim, Dark
   - **Weather**: Dry, Wet
@@ -117,14 +127,14 @@ Rare classes: Hammer, Pliers, Specific tool types
 ## Key Technical Concepts
 
 ### 1. The P2 Detection Head
-**Problem**: Feature vanishing in deep layers (stride 32) loses small object spatial information.
+**Problem**: Feature vanishing in deep layers (stride 32) can lose fine spatial information, but P2 benefits should be interpreted against the dataset's measured COCO-scale distribution.
 
 **Solution**: Add a shallow detection head at P2 (stride 4) that processes high-resolution features.
 
 **Implementation**: Modify YOLO YAML config to add P2/4 layer (see `configs/yolov8-p2.yaml`)
 
 ### 2. SAHI (Slicing Aided Hyper Inference)
-**Problem**: Small objects become even smaller in resized input images (e.g., 4K → 640px).
+**Problem**: Resizing changes the effective pixel scale seen by the detector, so original-resolution and training-resolution object scales must be reported separately.
 
 **Solution**: Slice high-res images into overlapping patches, detect in each patch, then merge results.
 
@@ -141,7 +151,7 @@ Rare classes: Hammer, Pliers, Specific tool types
 
 ### Primary Metrics:
 - **mAP@0.5**: Mean Average Precision at IoU threshold 0.5
-- **AP_small**: Average Precision for objects <32×32 pixels (most important for FOD)
+- **AP_small**: COCO small-object AP for boxes with area <32² pixels
 - **Recall@0.5**: Percentage of debris items detected
 - **FPS**: Frames per second (real-time viability)
 

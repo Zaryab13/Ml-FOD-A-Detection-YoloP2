@@ -23,28 +23,28 @@ IMG_SIZE = 1280
 MODELS = {
     'YOLOv8m_Baseline': {
         'config': None,
-        'weights': 'yolov8m.pt',
+        'weights': 'models/yolov8m.pt',
         'test_batches': [12, 14, 16, 18, 20],
         'expected_params': '25.9M',
         'previous_batch': 16
     },
     'YOLOv8m-P2': {
         'config': 'configs/yolov8-p2.yaml',
-        'weights': 'yolov8m.pt',  # Load pretrained YOLOv8m weights
+        'weights': 'models/yolov8m.pt',  # Load pretrained YOLOv8m weights
         'test_batches': [6, 8, 10, 12, 14],
         'expected_params': '42.9M',
         'previous_batch': 6
     },
     'YOLOv11m_Baseline': {
         'config': None,
-        'weights': 'yolo11m.pt',
+        'weights': 'models/yolo11m.pt',
         'test_batches': [8, 10, 12, 14, 16],
         'expected_params': '20.1M',
         'previous_batch': 8
     },
     'YOLOv11m-P2': {
         'config': 'configs/yolo11-p2.yaml',
-        'weights': 'yolo11m.pt',
+        'weights': 'models/yolo11m.pt',
         'test_batches': [6, 8, 10, 12],
         'expected_params': '~20M',
         'previous_batch': 6

@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
     # Load COCO pretrained YOLO11m
     print("Loading YOLO11m (COCO pretrained)...")
-    model = YOLO('yolo11m.pt')
+    model = YOLO('models/yolo11m.pt')
 
     # Verify model
     total_params = sum(p.numel() for p in model.model.parameters())

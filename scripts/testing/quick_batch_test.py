@@ -26,25 +26,25 @@ MODEL_CONFIGS = {
     'v8m': {
         'name': 'YOLOv8m Baseline',
         'config': None,
-        'weights': 'yolov8m.pt',
+        'weights': 'models/yolov8m.pt',
         'expected_params': '25.9M'
     },
     'v8m-p2': {
         'name': 'YOLOv8m-P2',
         'config': 'configs/yolov8-p2.yaml',
-        'weights': 'yolov8m.pt',
+        'weights': 'models/yolov8m.pt',
         'expected_params': '42.9M'
     },
     'v11m': {
         'name': 'YOLOv11m Baseline',
         'config': None,
-        'weights': 'yolo11m.pt',
+        'weights': 'models/yolo11m.pt',
         'expected_params': '20.1M'
     },
     'v11m-p2': {
         'name': 'YOLOv11m-P2',
         'config': 'configs/yolo11-p2.yaml',
-        'weights': 'yolo11m.pt',
+        'weights': 'models/yolo11m.pt',
         'expected_params': '20M'
     }
 }

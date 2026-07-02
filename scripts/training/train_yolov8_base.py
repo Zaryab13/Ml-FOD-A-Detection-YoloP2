@@ -11,7 +11,7 @@ from datetime import datetime
 
 # Configuration
 DATASET_CONFIG = "data/FOD-A/data.yaml"
-MODEL_SIZE = "yolov8m.pt"  # Options: yolov8n.pt, yolov8s.pt, yolov8m.pt, yolov8l.pt, yolov8x.pt
+MODEL_SIZE = "models/yolov8m.pt"  # Local COCO-pretrained YOLOv8m weights
 IMG_SIZE = 1280  # Higher resolution for small objects
 BATCH_SIZE = 16  # Adjust based on GPU memory
 EPOCHS = 100

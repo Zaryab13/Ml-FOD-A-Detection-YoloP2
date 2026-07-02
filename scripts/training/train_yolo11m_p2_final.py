@@ -1,9 +1,9 @@
 """
-YOLOv8m-P2 Training - Paper-Compliant Configuration
+YOLO11m-P2 Training - Paper-Compliant Configuration
 Foreign Object Debris (FOD) Detection on FOD-A Dataset
 
 Configuration:
-- Model: YOLOv8m-P2 (P2 architecture + COCO pretrained backbone)
+- Model: YOLO11m-P2 (P2 architecture + COCO pretrained backbone)
 - Resolution: 640×640 (Springer paper standard)
 - Batch: 16 (unified across all models)
 - Epochs: 100 (paper standard)
@@ -31,11 +31,11 @@ if __name__ == '__main__':
         print(f"CUDA device: {torch.cuda.get_device_name(0)}")
         print(f"CUDA memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
     print(f"{'='*70}\n")
+    
     # Dataset configuration
     DATASET_CONFIG = "data/FOD-A/data.yaml"
 
-    
-# --- Springer Paper Training Hyperparameters ---
+    # --- Springer Paper Training Hyperparameters ---
     EPOCHS = 100                  # Standard research duration for convergence
     IMGSZ = 640                   # Paper's standard input resolution (NOT 1280!)
     BATCH = 16                    # Unified batch size for fair comparison
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     WARMUP_EPOCHS = 3.0           # Initial stabilization period
     WARMUP_MOMENTUM = 0.8         # Momentum during warmup
     WARMUP_BIAS_LR = 0.1          # Learning rate for bias layers during warmup
-    WORKERS = 12                 # Data loading workers (increased from 4)
+    WORKERS = 16                  # Data loading workers (increased from 4)
 
     # --- Loss Function Weights (YOLOv8/v11 defaults) ---
     BOX = 7.5                     # Bounding box loss gain
@@ -70,12 +70,12 @@ if __name__ == '__main__':
 
     # Training configuration
     PROJECT_NAME = "fod_detection"
-    RUN_NAME = f"yolov8m_p2_640_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    RUN_NAME = f"yolo11m_p2_640_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
     print(f"\n{'='*70}")
-    print("YOLOV8M-P2 - PAPER-COMPLIANT TRAINING")
+    print("YOLO11M-P2 - PAPER-COMPLIANT TRAINING")
     print(f"{'='*70}")
-    print(f"Model:        YOLOv8m-P2 (P2 architecture + COCO pretrained)")
+    print(f"Model:        YOLO11m-P2 (P2 architecture + COCO pretrained)")
     print(f"Dataset:      FOD-A (41 classes)")
     print(f"Resolution:   {IMGSZ}×{IMGSZ} (paper standard)")
     print(f"Batch Size:   {BATCH} (unified)")
@@ -86,9 +86,9 @@ if __name__ == '__main__':
     print(f"Save to:      {PROJECT_NAME}/{RUN_NAME}")
     print(f"{'='*70}\n")
 
-    # Prepare YOLOv8-P2 config with correct nc
-    print("Preparing YOLOv8-P2 configuration...")
-    config_path = Path('configs/yolov8-p2.yaml')
+    # Prepare YOLO11-P2 config with correct nc
+    print("Preparing YOLO11-P2 configuration...")
+    config_path = Path('configs/yolo11-p2.yaml')
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
 
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     config['nc'] = data_config.get('nc', 41)
 
-    temp_config = Path('configs/yolov8-p2_temp.yaml')
+    temp_config = Path('configs/yolo11-p2_temp.yaml')
     with open(temp_config, 'w') as f:
         yaml.dump(config, f, default_flow_style=False)
 
@@ -105,17 +105,17 @@ if __name__ == '__main__':
     print(f"  Number of classes: {config['nc']}\n")
 
     # Load P2 architecture
-    print("Loading YOLOv8-P2 architecture...")
+    print("Loading YOLO11-P2 architecture...")
     model = YOLO(str(temp_config))
 
     # Load COCO pretrained weights
-    print("Loading COCO pretrained weights (yolov8m.pt)...")
-    model.load('yolov8m.pt')
+    print("Loading COCO pretrained weights (models/yolo11m.pt)...")
+    model.load('models/yolo11m.pt')
 
     # Verify model
     total_params = sum(p.numel() for p in model.model.parameters())
     print(f"✓ Model loaded: {total_params:,} parameters")
-    print(f"  Expected: ~42.9M parameters (P2 head adds extra layer)\n")
+    print(f"  Expected: ~20M+ parameters (P2 head adds extra layer)\n")
 
     # Start training
     print(f"{'='*70}")

@@ -129,8 +129,41 @@ class FODDatasetLoader:
         annotations = self.load_annotation(label_path)
         return img, annotations
     
-    def get_dataset_statistics(self, split: str = 'train') -> Dict:
-        """Calculate dataset statistics"""
+    @staticmethod
+    def _empty_scale_counts() -> Dict[str, int]:
+        return {'small': 0, 'medium': 0, 'large': 0}
+
+    @staticmethod
+    def _add_coco_area_bin(counts: Dict[str, int], area_px: float) -> None:
+        """COCO scale bins: small <32^2, medium 32^2-96^2, large >=96^2."""
+        if area_px < 32 ** 2:
+            counts['small'] += 1
+        elif area_px < 96 ** 2:
+            counts['medium'] += 1
+        else:
+            counts['large'] += 1
+
+    @staticmethod
+    def _add_max_dim_bin(counts: Dict[str, int], width_px: float, height_px: float) -> None:
+        """Legacy figure bins based on the longest bbox side, not COCO area."""
+        max_dim = max(width_px, height_px)
+        if max_dim < 32:
+            counts['small'] += 1
+        elif max_dim < 96:
+            counts['medium'] += 1
+        else:
+            counts['large'] += 1
+
+    def get_dataset_statistics(self, split: str = 'train', imgsz: int = 640) -> Dict:
+        """
+        Calculate dataset statistics.
+
+        Scale definitions are intentionally kept separate:
+        - coco_area_objects_original: COCO area bins at source image resolution.
+        - coco_area_objects_letterbox: COCO area bins after YOLO square letterbox resize.
+        - max_dim_objects_original: legacy Figure-style bins using longest bbox side.
+        - relative_area_bins: cumulative relative-frame-area bins; not a small-object definition.
+        """
         images_dir = self.dataset_root / 'images' / split
         labels_dir = self.dataset_root / 'labels' / split
         
@@ -140,10 +173,21 @@ class FODDatasetLoader:
             'total_images': len(image_files),
             'total_annotations': 0,
             'class_counts': {cls: 0 for cls in self.config.CLASSES},
-            'small_objects': 0,  # < 32x32 pixels
-            'medium_objects': 0,  # 32x32 to 96x96
-            'large_objects': 0,  # > 96x96
-            'bbox_areas': []
+            'coco_area_objects_original': self._empty_scale_counts(),
+            'coco_area_objects_letterbox': self._empty_scale_counts(),
+            'max_dim_objects_original': self._empty_scale_counts(),
+            'max_dim_objects_letterbox': self._empty_scale_counts(),
+            'relative_area_bins': {
+                '<0.1%': 0,
+                '<0.5%': 0,
+                '<1%': 0,
+                '<2%': 0,
+                '<5%': 0,
+                '<10%': 0,
+                '<20%': 0,
+            },
+            'bbox_areas': [],
+            'bbox_relative_areas': [],
         }
         
         for img_path in image_files:
@@ -162,15 +206,38 @@ class FODDatasetLoader:
                     width_px = ann['width'] * img_w
                     height_px = ann['height'] * img_h
                     area = width_px * height_px
+                    relative_area = ann['width'] * ann['height']
                     stats['bbox_areas'].append(area)
+                    stats['bbox_relative_areas'].append(relative_area)
                     
-                    max_dim = max(width_px, height_px)
-                    if max_dim < 32:
-                        stats['small_objects'] += 1
-                    elif max_dim < 96:
-                        stats['medium_objects'] += 1
-                    else:
-                        stats['large_objects'] += 1
+                    letterbox_scale = min(imgsz / img_h, imgsz / img_w)
+                    letterbox_width_px = width_px * letterbox_scale
+                    letterbox_height_px = height_px * letterbox_scale
+                    letterbox_area = letterbox_width_px * letterbox_height_px
+
+                    self._add_coco_area_bin(stats['coco_area_objects_original'], area)
+                    self._add_coco_area_bin(stats['coco_area_objects_letterbox'], letterbox_area)
+                    self._add_max_dim_bin(stats['max_dim_objects_original'], width_px, height_px)
+                    self._add_max_dim_bin(stats['max_dim_objects_letterbox'], letterbox_width_px, letterbox_height_px)
+
+                    for label, threshold in [
+                        ('<0.1%', 0.001),
+                        ('<0.5%', 0.005),
+                        ('<1%', 0.01),
+                        ('<2%', 0.02),
+                        ('<5%', 0.05),
+                        ('<10%', 0.10),
+                        ('<20%', 0.20),
+                    ]:
+                        if relative_area < threshold:
+                            stats['relative_area_bins'][label] += 1
+
+        # Backward compatibility for older notebook cells. These are legacy
+        # max-dimension bins, not COCO AP_small/AP_medium/AP_large bins.
+        legacy_counts = stats['max_dim_objects_original']
+        stats['small_objects'] = legacy_counts['small']
+        stats['medium_objects'] = legacy_counts['medium']
+        stats['large_objects'] = legacy_counts['large']
         
         return stats
     

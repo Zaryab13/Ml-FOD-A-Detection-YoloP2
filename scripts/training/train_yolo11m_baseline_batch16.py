@@ -16,7 +16,7 @@ from datetime import datetime
 
 # Configuration
 DATASET_CONFIG = "data/FOD-A/data.yaml"
-MODEL_SIZE = "yolo11m.pt"
+MODEL_SIZE = "models/yolo11m.pt"
 IMG_SIZE = 1280
 BATCH_SIZE = 16  # ⬆️ UPDATED from 8 for fair comparison
 EPOCHS = 100

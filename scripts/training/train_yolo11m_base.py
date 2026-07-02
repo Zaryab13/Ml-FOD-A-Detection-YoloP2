@@ -11,7 +11,7 @@ from datetime import datetime
 
 # Configuration
 DATASET_CONFIG = "data/FOD-A/data.yaml"
-MODEL_SIZE = "yolo11m.pt"  # YOLOv11m pretrained model
+MODEL_SIZE = "models/yolo11m.pt"  # Local COCO-pretrained YOLO11m weights
 IMG_SIZE = 1280  # Higher resolution for small objects
 BATCH_SIZE = 8  # Reduced from 16 to prevent VRAM spillover (30GB+ usage on 24GB card)
 EPOCHS = 100
